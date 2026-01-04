@@ -154,12 +154,13 @@ class SwipeListApi:
         return await self._request("GET", f"{ENDPOINT_LISTS}/{list_id}")
 
     async def get_list_items(self, list_id: int) -> list[dict[str, Any]]:
-        """Get items for a specific list."""
-        endpoint = ENDPOINT_LIST_ITEMS.format(list_id=list_id)
-        result = await self._request("GET", endpoint)
-        if isinstance(result, list):
-            return result
-        return result.get("items", result.get("data", []))
+        """Get items for a specific list.
+
+        Note: Items are included in the list response, so this fetches
+        the full list and extracts items.
+        """
+        list_data = await self.get_list(list_id)
+        return list_data.get("items", [])
 
     async def add_item(
         self,
@@ -168,14 +169,31 @@ class SwipeListApi:
         quantity: str | None = None,
         category: str | None = None,
     ) -> dict[str, Any]:
-        """Add an item to a list."""
-        endpoint = ENDPOINT_LIST_ITEMS.format(list_id=list_id)
-        data = {"name": name}
+        """Add an item to a list.
+
+        SwipeList uses PUT /lists/{id} with the full items array.
+        """
+        import uuid
+
+        # Fetch current list
+        list_data = await self.get_list(list_id)
+        items = list_data.get("items", [])
+
+        # Create new item
+        new_item = {
+            "id": str(uuid.uuid4()),
+            "name": name,
+            "checked": False,
+        }
         if quantity:
-            data["quantity"] = quantity
+            new_item["quantity"] = quantity
         if category:
-            data["category"] = category
-        return await self._request("POST", endpoint, data)
+            new_item["category"] = category
+
+        items.append(new_item)
+
+        # Update list with new items array
+        return await self._request("PUT", f"{ENDPOINT_LISTS}/{list_id}", {"items": items})
 
     async def update_item(
         self,
@@ -185,21 +203,45 @@ class SwipeListApi:
         name: str | None = None,
         quantity: str | None = None,
     ) -> dict[str, Any]:
-        """Update an item."""
-        endpoint = ENDPOINT_ITEM.format(list_id=list_id, item_id=item_id)
-        data = {}
-        if checked is not None:
-            data["checked"] = checked
-        if name is not None:
-            data["name"] = name
-        if quantity is not None:
-            data["quantity"] = quantity
-        return await self._request("PUT", endpoint, data)
+        """Update an item.
+
+        SwipeList uses PUT /lists/{id} with the full items array.
+        """
+        # Fetch current list
+        list_data = await self.get_list(list_id)
+        items = list_data.get("items", [])
+
+        # Find and update the item
+        item_id_str = str(item_id)
+        for item in items:
+            if str(item.get("id")) == item_id_str:
+                if checked is not None:
+                    item["checked"] = checked
+                    item["isChecked"] = checked  # Backend uses both
+                if name is not None:
+                    item["name"] = name
+                if quantity is not None:
+                    item["quantity"] = quantity
+                break
+
+        # Update list with modified items array
+        return await self._request("PUT", f"{ENDPOINT_LISTS}/{list_id}", {"items": items})
 
     async def delete_item(self, list_id: int, item_id: int) -> None:
-        """Delete an item from a list."""
-        endpoint = ENDPOINT_ITEM.format(list_id=list_id, item_id=item_id)
-        await self._request("DELETE", endpoint)
+        """Delete an item from a list.
+
+        SwipeList uses PUT /lists/{id} with the full items array.
+        """
+        # Fetch current list
+        list_data = await self.get_list(list_id)
+        items = list_data.get("items", [])
+
+        # Remove the item
+        item_id_str = str(item_id)
+        items = [item for item in items if str(item.get("id")) != item_id_str]
+
+        # Update list with filtered items array
+        await self._request("PUT", f"{ENDPOINT_LISTS}/{list_id}", {"items": items})
 
     async def check_item(self, list_id: int, item_id: int, checked: bool = True) -> dict[str, Any]:
         """Check or uncheck an item."""
