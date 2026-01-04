@@ -37,21 +37,49 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         refresh_token=entry.data.get(CONF_REFRESH_TOKEN),
     )
 
+    # Store last successful data to preserve on errors
+    last_successful_data: dict = {"lists": []}
+
     async def async_update_data() -> dict:
         """Fetch data from SwipeList API."""
+        nonlocal last_successful_data
+
         try:
             lists = await api.get_lists()
 
             # Items are already included in the list response from the API
             # No separate API call needed - items are in shopping_list["items"]
-            return {"lists": lists}
+            result = {"lists": lists}
+
+            # Store successful result
+            last_successful_data = result
+            _LOGGER.debug("Successfully fetched %d lists", len(lists))
+
+            return result
 
         except SwipeListAuthError as err:
+            _LOGGER.warning("Authentication failed, triggering re-auth: %s", err)
             # Trigger re-authentication
             entry.async_start_reauth(hass)
+            # Return last known data to prevent disappearing
+            if last_successful_data.get("lists"):
+                _LOGGER.info("Returning cached data while re-authenticating")
+                return last_successful_data
             raise UpdateFailed(f"Authentication failed: {err}") from err
         except SwipeListApiError as err:
+            _LOGGER.warning("API error: %s", err)
+            # Return last known data on temporary errors
+            if last_successful_data.get("lists"):
+                _LOGGER.info("Returning cached data due to API error")
+                return last_successful_data
             raise UpdateFailed(f"Error communicating with API: {err}") from err
+        except Exception as err:
+            _LOGGER.error("Unexpected error: %s", err)
+            # Return last known data on unexpected errors
+            if last_successful_data.get("lists"):
+                _LOGGER.info("Returning cached data due to unexpected error")
+                return last_successful_data
+            raise UpdateFailed(f"Unexpected error: {err}") from err
 
     coordinator = DataUpdateCoordinator(
         hass,
