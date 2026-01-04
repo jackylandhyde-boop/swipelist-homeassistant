@@ -1,0 +1,39 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "SwipeList verbinden",
+        "description": "Melde dich mit deinem SwipeList-Konto an.",
+        "data": {
+          "email": "E-Mail",
+          "password": "Passwort",
+          "api_url": "API URL (optional)"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Erneute Anmeldung erforderlich",
+        "description": "Die Sitzung ist abgelaufen. Bitte melde dich erneut an.",
+        "data": {
+          "email": "E-Mail",
+          "password": "Passwort"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung fehlgeschlagen",
+      "invalid_auth": "Ungültige Anmeldedaten",
+      "unknown": "Unbekannter Fehler"
+    },
+    "abort": {
+      "already_configured": "Dieses Konto ist bereits konfiguriert.",
+      "reauth_successful": "Erneute Anmeldung erfolgreich"
+    }
+  },
+  "entity": {
+    "todo": {
+      "shopping_list": {
+        "name": "Einkaufsliste"
+      }
+    }
+  }
+}

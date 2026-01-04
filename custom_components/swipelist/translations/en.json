@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect SwipeList",
+        "description": "Sign in with your SwipeList account.",
+        "data": {
+          "email": "Email",
+          "password": "Password",
+          "api_url": "API URL (optional)"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authentication required",
+        "description": "Your session has expired. Please sign in again.",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect",
+      "invalid_auth": "Invalid authentication",
+      "unknown": "Unknown error"
+    },
+    "abort": {
+      "already_configured": "This account is already configured.",
+      "reauth_successful": "Re-authentication successful"
+    }
+  }
+}
