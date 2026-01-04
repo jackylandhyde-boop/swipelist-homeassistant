@@ -42,18 +42,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         try:
             lists = await api.get_lists()
 
-            # Fetch items for each list
-            lists_with_items = []
-            for shopping_list in lists:
-                list_id = shopping_list.get("id")
-                try:
-                    items = await api.get_list_items(list_id)
-                    shopping_list["items"] = items
-                except SwipeListApiError:
-                    shopping_list["items"] = []
-                lists_with_items.append(shopping_list)
-
-            return {"lists": lists_with_items}
+            # Items are already included in the list response from the API
+            # No separate API call needed - items are in shopping_list["items"]
+            return {"lists": lists}
 
         except SwipeListAuthError as err:
             # Trigger re-authentication
