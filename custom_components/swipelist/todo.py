@@ -120,9 +120,20 @@ class SwipeListTodoEntity(CoordinatorEntity, TodoListEntity):
     @property
     def todo_items(self) -> list[TodoItem]:
         """Return the todo items for this list."""
+        import json
+
         items = []
         list_data = self._current_list_data
-        for item in list_data.get("items", []):
+        raw_items = list_data.get("items", [])
+
+        # Handle items being returned as JSON string from API
+        if isinstance(raw_items, str):
+            try:
+                raw_items = json.loads(raw_items)
+            except (json.JSONDecodeError, TypeError):
+                raw_items = []
+
+        for item in raw_items:
             status = (
                 TodoItemStatus.COMPLETED
                 if item.get("checked") or item.get("isChecked")

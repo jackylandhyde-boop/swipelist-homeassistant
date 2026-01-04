@@ -153,6 +153,22 @@ class SwipeListApi:
         """Get a specific shopping list with items."""
         return await self._request("GET", f"{ENDPOINT_LISTS}/{list_id}")
 
+    def _parse_items(self, items_data: Any) -> list[dict[str, Any]]:
+        """Parse items from API response.
+
+        Items may be returned as a JSON string or as a list.
+        """
+        import json
+
+        if isinstance(items_data, str):
+            try:
+                return json.loads(items_data)
+            except (json.JSONDecodeError, TypeError):
+                return []
+        if isinstance(items_data, list):
+            return items_data
+        return []
+
     async def get_list_items(self, list_id: int) -> list[dict[str, Any]]:
         """Get items for a specific list.
 
@@ -160,7 +176,7 @@ class SwipeListApi:
         the full list and extracts items.
         """
         list_data = await self.get_list(list_id)
-        return list_data.get("items", [])
+        return self._parse_items(list_data.get("items", []))
 
     async def add_item(
         self,
@@ -177,7 +193,7 @@ class SwipeListApi:
 
         # Fetch current list
         list_data = await self.get_list(list_id)
-        items = list_data.get("items", [])
+        items = self._parse_items(list_data.get("items", []))
 
         # Create new item
         new_item = {
@@ -209,7 +225,7 @@ class SwipeListApi:
         """
         # Fetch current list
         list_data = await self.get_list(list_id)
-        items = list_data.get("items", [])
+        items = self._parse_items(list_data.get("items", []))
 
         # Find and update the item
         item_id_str = str(item_id)
@@ -234,7 +250,7 @@ class SwipeListApi:
         """
         # Fetch current list
         list_data = await self.get_list(list_id)
-        items = list_data.get("items", [])
+        items = self._parse_items(list_data.get("items", []))
 
         # Remove the item
         item_id_str = str(item_id)
