@@ -84,7 +84,6 @@ class SwipeListTodoEntity(CoordinatorEntity, TodoListEntity):
         TodoListEntityFeature.CREATE_TODO_ITEM
         | TodoListEntityFeature.UPDATE_TODO_ITEM
         | TodoListEntityFeature.DELETE_TODO_ITEM
-        | TodoListEntityFeature.SET_ITEM_STATUS
     )
 
     def __init__(
